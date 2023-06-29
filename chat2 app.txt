@@ -1,0 +1,49 @@
+<!-- Client-side code: index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat App</title>
+    <style>
+      #messages {
+        height: 300px;
+        overflow-y: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Chat App</h1>
+    <div id="messages"></div>
+    <form id="chatForm">
+      <input type="text" id="messageInput" />
+      <button type="submit">Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      // Handle new user joining
+      const username = prompt('Enter your username:');
+      socket.emit('join', username);
+
+      // Display new messages
+      socket.on('chatMessage', (data) => {
+        const { username, message } = data;
+        const messageElement = document.createElement('p');
+        messageElement.textContent = `${username}: ${message}`;
+        document.getElementById('messages').appendChild(messageElement);
+      });
+
+      // Handle form submission
+      document.getElementById('chatForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value;
+        messageInput.value = '';
+
+        // Send the message to the server
+        socket.emit('chatMessage', message);
+      });
+    </script>
+  </body>
+</html>
