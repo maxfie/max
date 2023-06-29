@@ -1,0 +1,49 @@
+// Server-side code
+const express = require('express');
+const socket = require('socket.io');
+
+// Create Express app
+const app = express();
+const server = app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+
+// Serve static files
+app.use(express.static('public'));
+
+// Socket.IO setup
+const io = socket(server);
+
+// Store connected clients
+const connectedClients = new Map();
+
+// Socket.IO event handling
+io.on('connection', (socket) => {
+  console.log('New user connected:', socket.id);
+
+  // Handle new user joining
+  socket.on('join', (username) => {
+    // Store username and socket ID
+    connectedClients.set(socket.id, username);
+    // Notify other clients about the new user
+    socket.broadcast.emit('userJoined', username);
+  });
+
+  // Handle incoming messages
+  socket.on('chatMessage', (message) => {
+    // Get username of the sender
+    const username = connectedClients.get(socket.id);
+    // Broadcast the message to all connected clients
+    io.emit('chatMessage', { username, message });
+  });
+
+  // Handle user disconnection
+  socket.on('disconnect', () => {
+    const username = connectedClients.get(socket.id);
+    // Remove disconnected user from the list
+    connectedClients.delete(socket.id);
+    // Notify other clients about the user's disconnection
+    io.emit('userLeft', username);
+    console.log('User disconnected:', socket.id);
+  });
+});
